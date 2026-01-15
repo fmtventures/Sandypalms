@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,6 +135,311 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+/* EXECUTION PLAN STYLES */
+.step-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    cursor: grab;
+}
+.step-card:active { cursor: grabbing; }
+.step-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #2A9D8F;
+}
+.step-card.dragging {
+    opacity: 0.5;
+    border: 2px dashed #2A9D8F;
+    background-color: #f0fdfa;
+}
+.delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #EF4444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+.step-card:hover .delete-btn { opacity: 1; top: -12px; right: -12px; }
+.drag-handle { cursor: grab; color: #cbd5e1; transition: color 0.2s; }
+.step-card:hover .drag-handle { color: #2A9D8F; }
+.editable-text:focus { outline: none; border-bottom: 2px solid #2A9D8F; background-color: #f0fdfa; }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+Step 2: Add the Navigation Tab
+Where: Find your <nav> section (look for <button onclick="switchTab('structure')...).
+
+Action: Paste this line after the 'Structure' button but before the closing </nav> tag.
+
+HTML
+
+<button onclick="switchTab('steps')" class="tab-btn text-brand-teal font-bold bg-brand-sand/50" id="tab-steps">Execution Plan</button>
+Step 3: Add the Tab Content (HTML)
+Where: Scroll down to the very end of your content sections. Find the closing </div> of the id="content-structure" div.
+
+Action: Paste this huge block after the "Structure" section but before the closing </main> tag.
+
+HTML
+
+<div id="content-steps" class="hidden space-y-8">
+    <div class="bg-brand-navy text-white p-8 rounded-2xl shadow-xl sticky top-4 z-30 border-b-4 border-brand-gold mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">
+            <div>
+                <h3 class="text-3xl font-bold text-brand-gold mb-2">Acquisition Master Timeline</h3>
+                <p class="text-white/70 text-sm flex items-center gap-4">
+                    <span>✋ Drag cards to reorder</span>
+                    <span>|</span>
+                    <span>✏️ Click text to edit</span>
+                </p>
+            </div>
+            <div class="text-right">
+                <span class="block text-xs uppercase tracking-widest font-bold text-brand-teal mb-1">Current Phase</span>
+                <span class="text-3xl font-bold text-white" id="phase-display-title">Phase 1: Pre-Offer</span>
+            </div>
+        </div>
+
+        <div class="relative pt-2 pb-2 px-2">
+            <input type="range" min="1" max="5" value="1" step="1" id="phase-slider" oninput="renderExecutionPlan()" class="z-20 relative">
+            <div class="flex justify-between text-[10px] uppercase font-bold text-white/50 mt-4">
+                <span>1. Prep</span>
+                <span>2. The Trip</span>
+                <span>3. Offer/Legal</span>
+                <span>4. Closing</span>
+                <span>5. Launch</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="execution-container"></div>
+</div>
+Step 4: Add the Logic (JavaScript)
+Where: Scroll down to your <script> tag.
+
+Action: Paste this code block at the very bottom of your script, just before the closing </script> tag.
+
+JavaScript
+
+/* --- PASTE THIS AT THE BOTTOM OF YOUR SCRIPT --- */
+
+// 1. EXECUTION PLAN DATA
+const executionData = {
+    1: {
+        title: "Phase 1: Foundation & Financials",
+        description: "Getting the money and team ready before making a move.",
+        steps: [
+            { id: 101, title: "Bank Pre-Confirmation", desc: "Secure comfort letter or pre-approval.", date: "" },
+            { id: 102, title: "Proof of Funds (Equity)", desc: "Prepare statements showing 40% down payment.", date: "" },
+            { id: 103, title: "Engage Bahamian Lawyer", desc: "CRITICAL: Do not use a regular lawyer. Must be Bahamas-licensed.", date: "" },
+            { id: 104, title: "Define Corporate Structure", desc: "Decide on 51/49 split or Holding Corp.", date: "" }
+        ]
+    },
+    2: {
+        title: "Phase 2: The Exuma Trip (Next Week)",
+        description: "On-the-ground due diligence and team building.",
+        steps: [
+            { id: 201, title: "Site Inspection", desc: "Walk the 'Bunker'. Check seawall integrity.", date: "" },
+            { id: 202, title: "Expert Meeting: Local PM", desc: "Interview PMs. Ask about cleaning fees & hurricane prep.", date: "" },
+            { id: 203, title: "Expert Meeting: Contractor", desc: "Get rough quotes for the $100k renovation.", date: "" },
+            { id: 204, title: "Bank Visit (In-Person)", desc: "Visit RBC or local branch. Open specialized account.", date: "" }
+        ]
+    },
+    3: {
+        title: "Phase 3: Offer & Acceptance",
+        description: "Locking down the deal with legal protection.",
+        steps: [
+            { id: 301, title: "Submit Formal Offer", desc: "Price: $1.985M. Condition: Financing (45 days).", date: "" },
+            { id: 302, title: "Professional Inspection", desc: "Engage engineer. Focus: Cisterns, Septic, Roof.", date: "" },
+            { id: 303, title: "Govt Approval", desc: "Apply for Certificate of Registration.", date: "" },
+            { id: 304, title: "Bank Appraisal", desc: "Ensure valuator knows 'Gold Coast' comps.", date: "" }
+        ]
+    },
+    4: {
+        title: "Phase 4: Closing & Renovation",
+        description: "Transferring title and upgrading the asset.",
+        steps: [
+            { id: 401, title: "Closing Day", desc: "Wire remaining funds. Sign Conveyance. Pay VAT.", date: "" },
+            { id: 402, title: "Renovation Kickoff", desc: "Mobilize contractor. Priority: 1. AC 2. Roof 3. Paint.", date: "" },
+            { id: 403, title: "Furniture & Staging", desc: "Install 'Coastal Luxury' package. Starlink setup.", date: "" },
+            { id: 404, title: "License Application", desc: "Apply for Hotel Licensing Board approval.", date: "" }
+        ]
+    },
+    5: {
+        title: "Phase 5: Launch & Live",
+        description: "Marketing and first revenue generation.",
+        steps: [
+            { id: 501, title: "Professional Photography", desc: "Hire local drone operator. Sunrise/Sunset shots.", date: "" },
+            { id: 502, title: "Listing Launch", desc: "Live on Airbnb/VRBO + Direct Website.", date: "" },
+            { id: 503, title: "Optimization", desc: "Review first guest feedback. Adjust pricing.", date: "" },
+            { id: 504, title: "First Distribution", desc: "Quarter 1 Review. Distribute profits.", date: "" }
+        ]
+    }
+};
+
+// Drag State Variables
+let dragSrcEl = null;
+let dragSrcIndex = null;
+let currentDragPhase = null;
+
+// 2. RENDER FUNCTION
+function renderExecutionPlan() {
+    const container = document.getElementById('execution-container');
+    const slider = document.getElementById('phase-slider');
+    if(!container || !slider) return;
+    
+    const currentPhaseId = parseInt(slider.value);
+    const data = executionData[currentPhaseId];
+
+    document.getElementById('phase-display-title').innerText = data.title;
+    container.innerHTML = '';
+
+    const phaseWrapper = document.createElement('div');
+    phaseWrapper.className = "animate-fade-in space-y-6";
+
+    // Description
+    const desc = document.createElement('div');
+    desc.className = "text-center mb-8";
+    desc.innerHTML = `<span class="bg-brand-sand text-brand-navy px-6 py-2 rounded-full text-sm font-bold uppercase border border-brand-beige tracking-wide">${data.description}</span>`;
+    phaseWrapper.appendChild(desc);
+
+    // Button Container
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = "flex gap-4 justify-between mb-4";
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = "flex-1 border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-400 font-bold hover:border-brand-teal hover:text-brand-teal hover:bg-brand-sand/30 transition-all flex items-center justify-center gap-2";
+    addBtn.innerHTML = "<span>+</span> Add New Step";
+    addBtn.onclick = () => addStep(currentPhaseId);
+
+    const sortBtn = document.createElement('button');
+    sortBtn.className = "px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold hover:bg-brand-teal hover:text-white transition-colors text-sm shadow-sm";
+    sortBtn.innerHTML = "📅 Auto-Sort";
+    sortBtn.onclick = () => sortStepsByDate(currentPhaseId);
+
+    controlsDiv.appendChild(addBtn);
+    controlsDiv.appendChild(sortBtn);
+    phaseWrapper.appendChild(controlsDiv);
+
+    // Card Grid
+    const grid = document.createElement('div');
+    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+    
+    // Render Cards
+    data.steps.forEach((step, index) => {
+        const card = document.createElement('div');
+        card.className = "step-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 group";
+        card.draggable = true;
+        
+        card.addEventListener('dragstart', (e) => handleDragStart(e, index, currentPhaseId));
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', (e) => handleDrop(e, index, currentPhaseId));
+        card.addEventListener('dragend', handleDragEnd);
+
+        card.innerHTML = `
+            <button onclick="deleteStep(${currentPhaseId}, ${index})" class="delete-btn" title="Delete Step">×</button>
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="drag-handle text-gray-300 cursor-grab text-xl">⋮⋮</span>
+                    <span class="bg-brand-navy text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">${index + 1}</span>
+                </div>
+                <input type="date" value="${step.date}" onchange="saveDate(${currentPhaseId}, ${index}, this.value)" class="text-xs border border-gray-200 rounded px-2 py-1 text-gray-500 focus:outline-none focus:border-brand-teal bg-gray-50">
+            </div>
+            <h4 contenteditable="true" class="font-bold text-brand-navy text-lg mb-2 editable-text outline-none" onblur="saveStepTitle(${currentPhaseId}, ${index}, this.innerText)">${step.title}</h4>
+            <p contenteditable="true" class="text-sm text-gray-600 leading-relaxed editable-text outline-none" onblur="saveStepDesc(${currentPhaseId}, ${index}, this.innerText)">${step.desc}</p>
+        `;
+        grid.appendChild(card);
+    });
+
+    phaseWrapper.appendChild(grid);
+    container.appendChild(phaseWrapper);
+}
+
+// 3. ACTION FUNCTIONS
+function addStep(phaseId) {
+    executionData[phaseId].steps.push({ id: Date.now(), title: "New Action Item", desc: "Click here to describe...", date: "" });
+    renderExecutionPlan();
+}
+function deleteStep(phaseId, index) {
+    if(confirm('Remove this step?')) {
+        executionData[phaseId].steps.splice(index, 1);
+        renderExecutionPlan();
+    }
+}
+function sortStepsByDate(phaseId) {
+    executionData[phaseId].steps.sort((a, b) => {
+        if (!a.date) return 1; 
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+    });
+    renderExecutionPlan();
+}
+function saveStepTitle(pid, idx, txt) { executionData[pid].steps[idx].title = txt; }
+function saveStepDesc(pid, idx, txt) { executionData[pid].steps[idx].desc = txt; }
+function saveDate(pid, idx, date) { executionData[pid].steps[idx].date = date; }
+
+// Drag & Drop
+function handleDragStart(e, index, phaseId) {
+    dragSrcEl = e.target;
+    dragSrcIndex = index;
+    currentDragPhase = phaseId;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+function handleDragEnter(e) { this.classList.add('over'); }
+function handleDragLeave(e) { this.classList.remove('over'); }
+function handleDrop(e, dropIndex, phaseId) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragSrcIndex !== dropIndex && currentDragPhase === phaseId) {
+        const phaseSteps = executionData[phaseId].steps;
+        const [movedItem] = phaseSteps.splice(dragSrcIndex, 1);
+        phaseSteps.splice(dropIndex, 0, movedItem);
+        renderExecutionPlan();
+    }
+    return false;
+}
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    let items = document.querySelectorAll('.step-card');
+    items.forEach(function (item) { item.classList.remove('over'); });
+}
+
+// 4. IMPORTANT: UPDATE THE SWITCH TAB FUNCTION
+// Find your existing switchTab function and replace it with this one, 
+// OR just add the 'steps' line to your existing one.
+const oldSwitch = window.switchTab;
+window.switchTab = function(tabId) {
+    // Hide all
+    ['general', 'model', 'financial', 'revenue', 'roi', 'structure', 'acquisition', 'steps'].forEach(id => {
+        const c = document.getElementById(`content-${id}`);
+        const t = document.getElementById(`tab-${id}`);
+        if(c) c.classList.add('hidden');
+        if(t) t.classList.remove('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+    });
+    // Show selected
+    const sc = document.getElementById(`content-${tabId}`);
+    const st = document.getElementById(`tab-${tabId}`);
+    if(sc) sc.classList.remove('hidden');
+    if(st) st.classList.add('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+
+    // Init specific tabs
+    if(tabId === 'steps') renderExecutionPlan();
+    
+    // Call old logic for charts if needed (optional)
+    if(typeof compsChart !== 'undefined' && tabId === 'general') setTimeout(() => compsChart.resize(), 10);
+}
+
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -197,6 +503,7 @@
                     <button onclick="switchTab('revenue')" class="tab-btn" id="tab-revenue">Rev & Exp</button>
                     <button onclick="switchTab('roi')" class="tab-btn" id="tab-roi">ROI Overview</button>
                     <button onclick="switchTab('structure')" class="tab-btn" id="tab-structure">Structure</button>
+<button onclick="switchTab('steps')" class="tab-btn text-brand-teal font-bold bg-brand-sand/50" id="tab-steps">Execution Plan</button>
                 </nav>
             </div>
         </div>
@@ -938,6 +1245,37 @@
             </div>
 
         </div>
+<div id="content-steps" class="hidden space-y-8">
+    <div class="bg-brand-navy text-white p-8 rounded-2xl shadow-xl sticky top-4 z-30 border-b-4 border-brand-gold mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">
+            <div>
+                <h3 class="text-3xl font-bold text-brand-gold mb-2">Acquisition Master Timeline</h3>
+                <p class="text-white/70 text-sm flex items-center gap-4">
+                    <span>✋ Drag cards to reorder</span>
+                    <span>|</span>
+                    <span>✏️ Click text to edit</span>
+                </p>
+            </div>
+            <div class="text-right">
+                <span class="block text-xs uppercase tracking-widest font-bold text-brand-teal mb-1">Current Phase</span>
+                <span class="text-3xl font-bold text-white" id="phase-display-title">Phase 1: Pre-Offer</span>
+            </div>
+        </div>
+
+        <div class="relative pt-2 pb-2 px-2">
+            <input type="range" min="1" max="5" value="1" step="1" id="phase-slider" oninput="renderExecutionPlan()" class="z-20 relative">
+            <div class="flex justify-between text-[10px] uppercase font-bold text-white/50 mt-4">
+                <span>1. Prep</span>
+                <span>2. The Trip</span>
+                <span>3. Offer/Legal</span>
+                <span>4. Closing</span>
+                <span>5. Launch</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="execution-container"></div>
+</div>
     </main>
 
     <footer class="bg-white border-t border-gray-200 mt-12 py-8">
@@ -1659,6 +1997,217 @@
                  renderProjections();
             }, 100);
         });
+
+/* --- PASTE THIS AT THE BOTTOM OF YOUR SCRIPT --- */
+
+// 1. EXECUTION PLAN DATA
+const executionData = {
+    1: {
+        title: "Phase 1: Foundation & Financials",
+        description: "Getting the money and team ready before making a move.",
+        steps: [
+            { id: 101, title: "Bank Pre-Confirmation", desc: "Secure comfort letter or pre-approval.", date: "" },
+            { id: 102, title: "Proof of Funds (Equity)", desc: "Prepare statements showing 40% down payment.", date: "" },
+            { id: 103, title: "Engage Bahamian Lawyer", desc: "CRITICAL: Do not use a regular lawyer. Must be Bahamas-licensed.", date: "" },
+            { id: 104, title: "Define Corporate Structure", desc: "Decide on 51/49 split or Holding Corp.", date: "" }
+        ]
+    },
+    2: {
+        title: "Phase 2: The Exuma Trip (Next Week)",
+        description: "On-the-ground due diligence and team building.",
+        steps: [
+            { id: 201, title: "Site Inspection", desc: "Walk the 'Bunker'. Check seawall integrity.", date: "" },
+            { id: 202, title: "Expert Meeting: Local PM", desc: "Interview PMs. Ask about cleaning fees & hurricane prep.", date: "" },
+            { id: 203, title: "Expert Meeting: Contractor", desc: "Get rough quotes for the $100k renovation.", date: "" },
+            { id: 204, title: "Bank Visit (In-Person)", desc: "Visit RBC or local branch. Open specialized account.", date: "" }
+        ]
+    },
+    3: {
+        title: "Phase 3: Offer & Acceptance",
+        description: "Locking down the deal with legal protection.",
+        steps: [
+            { id: 301, title: "Submit Formal Offer", desc: "Price: $1.985M. Condition: Financing (45 days).", date: "" },
+            { id: 302, title: "Professional Inspection", desc: "Engage engineer. Focus: Cisterns, Septic, Roof.", date: "" },
+            { id: 303, title: "Govt Approval", desc: "Apply for Certificate of Registration.", date: "" },
+            { id: 304, title: "Bank Appraisal", desc: "Ensure valuator knows 'Gold Coast' comps.", date: "" }
+        ]
+    },
+    4: {
+        title: "Phase 4: Closing & Renovation",
+        description: "Transferring title and upgrading the asset.",
+        steps: [
+            { id: 401, title: "Closing Day", desc: "Wire remaining funds. Sign Conveyance. Pay VAT.", date: "" },
+            { id: 402, title: "Renovation Kickoff", desc: "Mobilize contractor. Priority: 1. AC 2. Roof 3. Paint.", date: "" },
+            { id: 403, title: "Furniture & Staging", desc: "Install 'Coastal Luxury' package. Starlink setup.", date: "" },
+            { id: 404, title: "License Application", desc: "Apply for Hotel Licensing Board approval.", date: "" }
+        ]
+    },
+    5: {
+        title: "Phase 5: Launch & Live",
+        description: "Marketing and first revenue generation.",
+        steps: [
+            { id: 501, title: "Professional Photography", desc: "Hire local drone operator. Sunrise/Sunset shots.", date: "" },
+            { id: 502, title: "Listing Launch", desc: "Live on Airbnb/VRBO + Direct Website.", date: "" },
+            { id: 503, title: "Optimization", desc: "Review first guest feedback. Adjust pricing.", date: "" },
+            { id: 504, title: "First Distribution", desc: "Quarter 1 Review. Distribute profits.", date: "" }
+        ]
+    }
+};
+
+// Drag State Variables
+let dragSrcEl = null;
+let dragSrcIndex = null;
+let currentDragPhase = null;
+
+// 2. RENDER FUNCTION
+function renderExecutionPlan() {
+    const container = document.getElementById('execution-container');
+    const slider = document.getElementById('phase-slider');
+    if(!container || !slider) return;
+    
+    const currentPhaseId = parseInt(slider.value);
+    const data = executionData[currentPhaseId];
+
+    document.getElementById('phase-display-title').innerText = data.title;
+    container.innerHTML = '';
+
+    const phaseWrapper = document.createElement('div');
+    phaseWrapper.className = "animate-fade-in space-y-6";
+
+    // Description
+    const desc = document.createElement('div');
+    desc.className = "text-center mb-8";
+    desc.innerHTML = `<span class="bg-brand-sand text-brand-navy px-6 py-2 rounded-full text-sm font-bold uppercase border border-brand-beige tracking-wide">${data.description}</span>`;
+    phaseWrapper.appendChild(desc);
+
+    // Button Container
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = "flex gap-4 justify-between mb-4";
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = "flex-1 border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-400 font-bold hover:border-brand-teal hover:text-brand-teal hover:bg-brand-sand/30 transition-all flex items-center justify-center gap-2";
+    addBtn.innerHTML = "<span>+</span> Add New Step";
+    addBtn.onclick = () => addStep(currentPhaseId);
+
+    const sortBtn = document.createElement('button');
+    sortBtn.className = "px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold hover:bg-brand-teal hover:text-white transition-colors text-sm shadow-sm";
+    sortBtn.innerHTML = "📅 Auto-Sort";
+    sortBtn.onclick = () => sortStepsByDate(currentPhaseId);
+
+    controlsDiv.appendChild(addBtn);
+    controlsDiv.appendChild(sortBtn);
+    phaseWrapper.appendChild(controlsDiv);
+
+    // Card Grid
+    const grid = document.createElement('div');
+    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+    
+    // Render Cards
+    data.steps.forEach((step, index) => {
+        const card = document.createElement('div');
+        card.className = "step-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 group";
+        card.draggable = true;
+        
+        card.addEventListener('dragstart', (e) => handleDragStart(e, index, currentPhaseId));
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', (e) => handleDrop(e, index, currentPhaseId));
+        card.addEventListener('dragend', handleDragEnd);
+
+        card.innerHTML = `
+            <button onclick="deleteStep(${currentPhaseId}, ${index})" class="delete-btn" title="Delete Step">×</button>
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="drag-handle text-gray-300 cursor-grab text-xl">⋮⋮</span>
+                    <span class="bg-brand-navy text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">${index + 1}</span>
+                </div>
+                <input type="date" value="${step.date}" onchange="saveDate(${currentPhaseId}, ${index}, this.value)" class="text-xs border border-gray-200 rounded px-2 py-1 text-gray-500 focus:outline-none focus:border-brand-teal bg-gray-50">
+            </div>
+            <h4 contenteditable="true" class="font-bold text-brand-navy text-lg mb-2 editable-text outline-none" onblur="saveStepTitle(${currentPhaseId}, ${index}, this.innerText)">${step.title}</h4>
+            <p contenteditable="true" class="text-sm text-gray-600 leading-relaxed editable-text outline-none" onblur="saveStepDesc(${currentPhaseId}, ${index}, this.innerText)">${step.desc}</p>
+        `;
+        grid.appendChild(card);
+    });
+
+    phaseWrapper.appendChild(grid);
+    container.appendChild(phaseWrapper);
+}
+
+// 3. ACTION FUNCTIONS
+function addStep(phaseId) {
+    executionData[phaseId].steps.push({ id: Date.now(), title: "New Action Item", desc: "Click here to describe...", date: "" });
+    renderExecutionPlan();
+}
+function deleteStep(phaseId, index) {
+    if(confirm('Remove this step?')) {
+        executionData[phaseId].steps.splice(index, 1);
+        renderExecutionPlan();
+    }
+}
+function sortStepsByDate(phaseId) {
+    executionData[phaseId].steps.sort((a, b) => {
+        if (!a.date) return 1; 
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+    });
+    renderExecutionPlan();
+}
+function saveStepTitle(pid, idx, txt) { executionData[pid].steps[idx].title = txt; }
+function saveStepDesc(pid, idx, txt) { executionData[pid].steps[idx].desc = txt; }
+function saveDate(pid, idx, date) { executionData[pid].steps[idx].date = date; }
+
+// Drag & Drop
+function handleDragStart(e, index, phaseId) {
+    dragSrcEl = e.target;
+    dragSrcIndex = index;
+    currentDragPhase = phaseId;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+function handleDragEnter(e) { this.classList.add('over'); }
+function handleDragLeave(e) { this.classList.remove('over'); }
+function handleDrop(e, dropIndex, phaseId) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragSrcIndex !== dropIndex && currentDragPhase === phaseId) {
+        const phaseSteps = executionData[phaseId].steps;
+        const [movedItem] = phaseSteps.splice(dragSrcIndex, 1);
+        phaseSteps.splice(dropIndex, 0, movedItem);
+        renderExecutionPlan();
+    }
+    return false;
+}
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    let items = document.querySelectorAll('.step-card');
+    items.forEach(function (item) { item.classList.remove('over'); });
+}
+
+// 4. IMPORTANT: UPDATE THE SWITCH TAB FUNCTION
+// Find your existing switchTab function and replace it with this one, 
+// OR just add the 'steps' line to your existing one.
+const oldSwitch = window.switchTab;
+window.switchTab = function(tabId) {
+    // Hide all
+    ['general', 'model', 'financial', 'revenue', 'roi', 'structure', 'acquisition', 'steps'].forEach(id => {
+        const c = document.getElementById(`content-${id}`);
+        const t = document.getElementById(`tab-${id}`);
+        if(c) c.classList.add('hidden');
+        if(t) t.classList.remove('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+    });
+    // Show selected
+    const sc = document.getElementById(`content-${tabId}`);
+    const st = document.getElementById(`tab-${tabId}`);
+    if(sc) sc.classList.remove('hidden');
+    if(st) st.classList.add('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+
+    // Init specific tabs
+    if(tabId === 'steps') renderExecutionPlan();
+    
+    // Call old logic for charts if needed (optional)
+    if(typeof compsChart !== 'undefined' && tabId === 'general') setTimeout(() => compsChart.resize(), 10);
+}
     </script>
 </body>
 </html>
